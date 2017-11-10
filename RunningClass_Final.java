@@ -47,13 +47,7 @@ public class RunningClass {
 		ILaunchManager manager = DebugPlugin.getDefault().getLaunchManager();
 		ILaunchConfigurationType type = manager.getLaunchConfigurationType(ID_JAVA_APPLICATION);
 		ILaunchConfiguration[] configurations = manager.getLaunchConfigurations(type);
-		for (int i = 0; i < configurations.length; i++) {
-			ILaunchConfiguration configuration = configurations[i];
-			if (configuration.getName().equals("Start Tomcat")) {
-				configuration.delete();
-				break;
-			}
-		}
+
 		ILaunchConfigurationType configType = manager.getLaunchConfigurationType("org.springframework.ide.eclipse.boot.launch");
 		ILaunchConfigurationWorkingCopy workingCopy = configType.newInstance(null, manager.generateLaunchConfigurationName(
 				"Sample-microservice-module-runconfig"));
