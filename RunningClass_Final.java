@@ -1,19 +1,24 @@
 package runner;
 
 import static org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME;
-import static org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants.ID_JAVA_APPLICATION;
 
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IAdaptable;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationType;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.debug.ui.DebugUITools;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
-import org.eclipse.jdt.launching.IVMInstall;
-import org.eclipse.jdt.launching.IVMInstallType;
-import org.eclipse.jdt.launching.JavaRuntime;
+import org.springsource.ide.eclipse.commons.frameworks.core.maintype.MainTypeFinder;
 
 public class RunningClass {
 	public static final String TYPE_ID = "org.springframework.ide.eclipse.boot.launch";
@@ -44,15 +49,40 @@ public class RunningClass {
 	public static final long DEFAULT_TERMINATION_TIMEOUT = 15000; // 15 seconds
 	
 	public void runProject() throws CoreException {
+		
 		ILaunchManager manager = DebugPlugin.getDefault().getLaunchManager();
-		ILaunchConfigurationType type = manager.getLaunchConfigurationType(ID_JAVA_APPLICATION);
-		ILaunchConfiguration[] configurations = manager.getLaunchConfigurations(type);
 
+		IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+		IProject[] iProjects = workspaceRoot.getProjects();
+		
+		IProject selectedProject = null;
+		IJavaProject selectedJavaProject = null;
+		IJavaElement javaElement = null;
+		
+        for(IProject iProject: iProjects) {
+            if(iProject.getName().equalsIgnoreCase("EmployeeDemo-microservice-module")) {
+            	selectedProject = iProject;
+            	break;
+            }
+         }
+        
+        if ( selectedProject != null ){ 
+	        if ( selectedProject instanceof IAdaptable ){ 
+	        	IAdaptable a = ( IAdaptable ) selectedProject;
+	        	
+	        	javaElement = (IJavaElement) a.getAdapter(IJavaElement.class); 
+	        	selectedJavaProject = javaElement.getJavaProject(); 
+	        } 
+        }
+        
+		IType mainType = MainTypeFinder.guessMainTypes(selectedJavaProject, new NullProgressMonitor())[0];
+		
 		ILaunchConfigurationType configType = manager.getLaunchConfigurationType("org.springframework.ide.eclipse.boot.launch");
 		ILaunchConfigurationWorkingCopy workingCopy = configType.newInstance(null, manager.generateLaunchConfigurationName(
-				"Sample-microservice-module-runconfig"));
-		workingCopy.setAttribute(ATTR_PROJECT_NAME, "Sample-microservice-module");
-		workingCopy.setAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, "com.lti.studio.StudioApplication");
+				selectedProject+"-runconfig"));
+		
+		workingCopy.setAttribute(ATTR_PROJECT_NAME, selectedProject.getName());
+		workingCopy.setAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, mainType.getFullyQualifiedName());
 		workingCopy.setAttribute(ENABLE_JMX, DEFAULT_ENABLE_JMX);
 		workingCopy.setAttribute(ENABLE_LIVE_BEAN_SUPPORT, DEFAULT_ENABLE_LIVE_BEAN_SUPPORT);
 		workingCopy.setAttribute(ENABLE_LIFE_CYCLE, DEFAULT_ENABLE_LIFE_CYCLE);
